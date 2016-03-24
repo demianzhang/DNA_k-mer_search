@@ -1,0 +1,259 @@
+#include "stdio.h"
+#define maxn 100
+#include <time.h>
+#include <cstdlib>
+#include<string.h>
+
+int wa[maxn], wb[maxn], wv[maxn], ws[maxn];
+int cmp(int *r, int a, int b, int l)
+{
+	return r[a] == r[b] && r[a + l] == r[b + l];
+}
+
+void da(int *r, int *sa, int n, int m, int length)
+{
+	//r为字符串数组，sa为后缀数组，n=strlen(s)+1，m为max(r[i])+1。
+	int i, j, p, *x = wa, *y = wb, *t;
+	//对长度为1的字符串基数排序。
+	for (i = 0; i<m; i++) 
+		ws[i] = 0;//清零。
+	for (i = 0; i<n; i++) 
+		ws[x[i] = r[i]]++;//统计各相同字符的个数。
+	for (i = 1; i<m; i++) 
+		ws[i] += ws[i - 1];//统计小于等于i的字符共有多少个。
+	for (i = n-1; i >= 0; i--) 
+		sa[--ws[x[i]]] = i;//小于等于r[i]共有ws[x[i]]个，因此r[i]排在第ws[x[i]]个。
+	
+	for (j = 1, p = 1; p<length; j *= 2, m = p)//p是第二关键字为0的个数，j是当前比较的字符串长度。
+	{
+		//直接利用sa数组排序第二关键字
+		for (p = 0, i = n - j; i<n; i++) 
+			y[p++] = i;
+		for (i = 0; i < n; i++) 
+		{
+			if (sa[i] >= j) 
+				y[p++] = sa[i] - j;
+		}
+
+		
+		//基数排序第一关键字
+		for (i = 0; i<n; i++)
+			wv[i] = x[y[i]];	
+		for (i = 0; i<m; i++) 
+			ws[i] = 0;
+		for (i = 0; i<n; i++) 
+			ws[wv[i]]++;
+		for (i = 1; i<m; i++) 
+			ws[i] += ws[i - 1];
+		for (i = n - 1; i >= 0; i--) 
+			sa[--ws[wv[i]]] = y[i];
+		
+		//根据sa和y数组计算新的x数组
+		for (t = x, x = y, y = t, p = 1, x[sa[0]] = 0, i = 1; i<n; i++)
+			x[sa[i]] = cmp(y, sa[i - 1], sa[i], j) ? p - 1 : p++;
+	}
+	//去掉多余项
+	for (i = 0; i < length; i++)
+	{
+		if (sa[i] >= length)
+		{
+
+			for (j = i; j < n-1;j++)
+			sa[j] = sa[j + 1];
+			i--;
+		}
+		
+	}
+	return;
+}
+
+void da1(int *r, int *sa, int n, int m, int length)
+{
+	int i, j, p, *x = wa, *y = wb, *t;
+	for (i = 0; i<m; i++) ws[i] = 0;
+	for (i = 0; i<n; i++) ws[x[i] = r[i]]++;
+	for (i = 1; i<m; i++) ws[i] += ws[i - 1];
+	for (i = n-1; i >= 0; i--) sa[--ws[x[i]]] = i;
+	for (j = 1; j<n-length; j *= 2)
+	{
+		int p = 0;
+		//直接利用sa数组排序第二关键字
+		for (i = n - j; i<n; i++) y[p++] = i;
+		for (i = 0; i<n; i++) if (sa[i] >= j) y[p++] = sa[i] - j;
+
+		//基数排序第一关键字
+		for (i = 0; i<n; i++) wv[i] = x[y[i]];
+		for (i = 0; i<m; i++) ws[i] = 0;
+		for (i = 0; i<n; i++) ws[wv[i]]++;
+		for (i = 1; i<m; i++) ws[i] += ws[i - 1];
+		for (i = n - 1; i >= 0; i--) sa[--ws[wv[i]]] = y[i];
+
+		//根据sa和y数组计算新的x数组
+		for (t = x, x = y, y = t, p = 1, x[sa[0]] = 0, i = 1; i<n; i++)
+			x[sa[i]] = cmp(y, sa[i - 1], sa[i], j) ? p - 1 : p++;
+		
+		if (p>n) break;
+		m = p;
+	}
+	return;
+}
+//二分检索函数
+int binSearch(char *r, char p[], int sa[], int k, int n)
+{
+	int low = -1;
+	int high = n;
+	while (low + 1 != high)
+	{
+		int i = (low + high) / 2;
+		if (strncmp(p, &r[sa[i]], k)<0)
+		{
+			high = i;
+		}
+		if (strncmp(p, &r[sa[i]], k) == 0)
+		{
+			return i;
+		}
+		if (strncmp(p, &r[sa[i]], k) > 0)
+		{
+			low = i;
+		}
+	}
+	return -1;
+}
+
+char s[maxn];
+char p[100];
+int r[100], sa[100];
+int index[100000000];
+char DNA[100000000];
+
+//读入文件到内存
+void PreTreat(){
+	FILE *fSource1, *fSource2;
+	if ((fSource1 = fopen("solexa_100_170_1.fa", "r")) == NULL)
+	{//文件1 
+		printf("Can't open the solexa_100_170_1.fa!\n");
+		getchar();
+		exit(-1);
+	}
+	if ((fSource2 = fopen("solexa_100_170_2.fa", "r")) == NULL)
+	{//文件2 
+		printf("Can't open the solexa_100_170_1.fa!\n");
+		getchar();
+		exit(-1);
+	}
+	int i;
+	char ch;
+	char str[100];
+
+	//处理文件1 的 500000条 
+	for (i = 0; i<500000; i++)
+	{
+		while ((ch = fgetc(fSource1)) && (ch<'A' || ch>'T'));
+		fgets(str, 100, fSource1);
+		DNA[100 * i] = ch;
+		for (int j = 1; j < 100; j++)
+		{
+			DNA[100 * i + j] = str[j - 1];
+		}
+	}
+	printf("文件1处理完毕\n");
+    
+	//处理文件2 的 500000条	
+	for (i = 500000; i<1000000; i++)
+	{ 
+		while ((ch = fgetc(fSource2)) && (ch<'A' || ch>'T'));
+		fgets(str, 100, fSource2);
+		DNA[100 * i] = ch;
+		for (int j = 1; j < 100; j++)
+		{
+			DNA[100 * i + j] = str[j - 1];
+		}
+	}
+	printf("文件2处理完毕\n");
+	
+	fclose(fSource1);
+	printf("1 close\n");
+	fclose(fSource2);
+	printf("2 close\n");
+}
+int main()
+{
+	clock_t start, finish, middle,middle2;
+	double duration, duration1;
+	int i, length, n, k;
+	
+	srand((unsigned)time(0));
+
+	printf("匹配序列长度:\n");
+	scanf("%d", &k);
+
+	n = 100;
+	length = n - k + 1;//索引长度
+
+	FILE *fResult;
+
+	fResult = fopen("搜索结果.txt", "w");
+
+	start = clock();
+	PreTreat();//读两个文件
+	for (int line = 1; line <= 1000000; line++)//读1000000行
+	{
+		for (int j = 0; j < 100; j++)
+		{
+			r[j] = DNA[100 * (line - 1) + j];
+		}
+				
+		da(r, sa, n, 85,length);//求sa数组
+		for (int k = 0; k<length; k++)
+		{
+			index[(line - 1) * length + k] = sa[k];//求index数组
+		}
+	}
+	middle = clock();
+
+	printf("匹配序列:\n");
+	scanf("%s", p);//输入目标序列
+
+	middle2 = clock();
+	for (int line = 1; line <= 1000000; line++)
+	{
+		for (i = 0; i < 100; i++)
+		{
+			s[i] = DNA[(line - 1) * 100 + i];//取出DNA序列
+		}
+		for (i = 0; i < length; i++)
+		{
+			sa[i] = index[(line - 1) * length + i];//取出索引
+		}
+
+		int dot = binSearch(s, p, sa, k, length);//二分检索
+		if (dot != -1)
+		{					
+			int lt = dot, rt = dot;
+			while (strncmp(p, &s[sa[lt - 1]], k) == 0)//向左扩展
+			{
+				lt--;
+			}
+			while (strncmp(p, &s[sa[rt + 1]], k) == 0)//向右扩展
+			{
+				rt++;
+			}
+			while (lt<=rt)
+			{
+				fprintf(fResult, "第%d行:   ", line);//输出到文件
+				fprintf(fResult, "from %d", sa[lt] + 1);
+				fprintf(fResult, "\n");
+				lt++;
+			}
+		}
+	}
+
+	finish = clock();
+	duration = (double)(middle - start);//建立索引时间
+	duration1 = (double)(finish - middle2);//检索时间
+
+	printf("建立索引运行时间为%f\n", duration);
+	printf("查询运行时间为%f\n", duration1);
+	return 0;
+}
